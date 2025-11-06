@@ -37,7 +37,7 @@ pipeline {
                         sonar-scanner \
                           -Dsonar.projectKey=ci-cd-demo \
                           -Dsonar.sources=. \
-                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.host.url=http://172.28.93.133:9000 \
                           -Dsonar.login=$SONARQUBE \
                           -Dsonar.python.version=3.12
                     '''
