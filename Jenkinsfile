@@ -21,10 +21,10 @@ pipeline {
             steps {
                 // ✅ Use python3 & pip3 explicitly (Jenkins runs in its own environment)
                 sh '''
-                    python3 --version
-                    pip3 --version
-                    pip3 install --upgrade pip
-                    pip3 install -r requirements.txt
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                     pytest --maxfail=1 --disable-warnings -q
                 '''
             }
