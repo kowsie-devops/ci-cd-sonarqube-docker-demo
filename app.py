@@ -1,3 +1,6 @@
-# app.py
-print("Hello, CI/CD Pipeline with Jenkins, SonarQube, and Docker!")
+def message():
+    return "Hello, CI/CD pipeline with SonarQube and Docker!"
+
+if __name__ == "__main__":
+    print(message())
 

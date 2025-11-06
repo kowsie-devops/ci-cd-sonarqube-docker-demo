@@ -1,4 +1,5 @@
-# test_app.py
+from app import message
+
 def test_message():
-    assert "CI/CD" in "Hello, CI/CD Pipeline with Jenkins, SonarQube, and Docker!"
+    assert "CI/CD" in message()
 
