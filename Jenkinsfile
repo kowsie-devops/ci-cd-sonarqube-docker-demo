@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONARQUBE = 'SonarQube' // Matches name in Jenkins config
-        IMAGE_NAME = 'kowsie-devops/ci-cd-demo' // Your real DockerHub repo
+        IMAGE_NAME = 'kowsie-devops/ci-cd-demo' // Your DockerHub repo
     }
 
     triggers {
@@ -19,8 +19,14 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'pytest --maxfail=1 --disable-warnings -q'
+                // ✅ Use python3 & pip3 explicitly (Jenkins runs in its own environment)
+                sh '''
+                    python3 --version
+                    pip3 --version
+                    pip3 install --upgrade pip
+                    pip3 install -r requirements.txt
+                    pytest --maxfail=1 --disable-warnings -q
+                '''
             }
         }
 
@@ -28,12 +34,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
-                    sonar-scanner \
-                    -Dsonar.projectKey=ci-cd-demo \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=http://localhost:9000 \
-                    -Dsonar.login=$SONARQUBE \
-                    -Dsonar.python.version=3.9
+                        sonar-scanner \
+                          -Dsonar.projectKey=ci-cd-demo \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.login=$SONARQUBE \
+                          -Dsonar.python.version=3.12
                     '''
                 }
             }
@@ -57,10 +63,10 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh """
-                    echo $PASS | docker login -u $USER --password-stdin
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
-                    docker push ${IMAGE_NAME}:latest
+                        echo $PASS | docker login -u $USER --password-stdin
+                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
+                        docker push ${IMAGE_NAME}:latest
                     """
                 }
             }
@@ -69,8 +75,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh """
-                docker rm -f ci_cd_demo || true
-                docker run -d --name ci_cd_demo -p 8080:8080 ${IMAGE_NAME}:latest
+                    docker rm -f ci_cd_demo || true
+                    docker run -d --name ci_cd_demo -p 8080:8080 ${IMAGE_NAME}:latest
                 """
             }
         }
