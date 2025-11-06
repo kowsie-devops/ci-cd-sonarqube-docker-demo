@@ -29,21 +29,25 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=ci-cd-demo \
-                          -Dsonar.sources=. \
-                          -Dsonar.host.url=http://172.28.93.133:9000 \
-                          -Dsonar.login=$SONARQUBE \
-                          -Dsonar.python.version=3.12
-                    '''
+                     script {
+                // use Jenkins tool instead of relying on PATH
+                         def scannerHome = tool 'SonarScanner'
+                         sh """
+                             ${scannerHome}/bin/sonar-scanner \
+                             -Dsonar.projectKey=ci-cd-demo \
+                             -Dsonar.sources=. \
+                             -Dsonar.host.url=http://172.28.93.133:9000 \
+                             -Dsonar.login=squ_9d615a186046942605af2e58aca9561a95b360a3 \
+                             -Dsonar.python.version=3.12
+                         """
+                     }
                 }
-            }
-        }
+           }
+       }
 
         stage('Quality Gate') {
             steps {
