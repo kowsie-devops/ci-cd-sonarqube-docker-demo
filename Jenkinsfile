@@ -8,7 +8,7 @@ pipeline {
     }
 
     triggers {
-        githubPush()  // ✅ Trigger pipeline automatically on every GitHub push
+        githubPush()  // Trigger pipeline automatically on every GitHub push
     }
 
     stages {
