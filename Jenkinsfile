@@ -37,7 +37,7 @@ pipeline {
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarScanner/bin/sonar-scanner \
                         -Dsonar.projectKey=ci-cd-demo \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=http://172.28.93.133:9000 \
+                        -Dsonar.host.url=http://localhost:9000 \
                         -Dsonar.token=$SONAR_TOKEN \
                         -Dsonar.python.version=3.12
                     '''
