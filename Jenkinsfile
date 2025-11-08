@@ -22,7 +22,7 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh '''
+                sh ''' #!/bin/bash
                     python3 -m venv venv
                     source venv/bin/activate
                     pip install --upgrade pip
@@ -35,7 +35,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
+                    sh ''' #!/bin/bash
                         source venv/bin/activate
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarScanner/bin/sonar-scanner \
                             -Dsonar.projectKey=ci-cd-demo \
