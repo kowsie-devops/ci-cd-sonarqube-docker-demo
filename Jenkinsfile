@@ -24,7 +24,7 @@ pipeline {
             steps {
                 sh ''' #!/bin/bash
                     python3 -m venv venv
-                    source venv/bin/activate
+                    . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                     pytest --maxfail=1 --disable-warnings -q
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh ''' #!/bin/bash
-                        source venv/bin/activate
+                        . venv/bin/activate
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarScanner/bin/sonar-scanner \
                             -Dsonar.projectKey=ci-cd-demo \
                             -Dsonar.sources=. \
