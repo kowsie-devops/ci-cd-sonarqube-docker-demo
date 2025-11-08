@@ -4,7 +4,7 @@ pipeline {
     environment {
         SONARQUBE = 'SonarQube' // matches Jenkins config name
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
-        SONAR_TOKEN = credentials('SonarQube-Token')
+        SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
 
     triggers {
@@ -38,7 +38,7 @@ pipeline {
                         -Dsonar.projectKey=ci-cd-demo \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://172.28.93.133:9000 \
-                        -Dsonar.token=$SonarQube-Token \
+                        -Dsonar.token=$SONAR_TOKEN \
                         -Dsonar.python.version=3.12
                     '''
                 }
