@@ -1,9 +1,6 @@
 pipeline {
     agent any
 
-    options {
-        shell('/bin/bash')
-    }
 
     environment {
         SONARQUBE = 'SonarQube'
