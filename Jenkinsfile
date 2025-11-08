@@ -5,6 +5,7 @@ pipeline {
         SONARQUBE = 'SonarQube' // matches Jenkins config name in system config
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
         SONAR_TOKEN = credentials('SONAR_TOKEN')
+        BUILD_TAG = "${env.BUILD_NUMBER}"
     }
 
     triggers {
@@ -34,12 +35,13 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
+                        source venv/bin/activate
                         /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarScanner/bin/sonar-scanner \
-                        -Dsonar.projectKey=ci-cd-demo \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.token=$SONAR_TOKEN \
-                        -Dsonar.python.version=3.12
+                            -Dsonar.projectKey=ci-cd-demo \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://172.28.93.133:9000 \
+                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.python.version=3.12
                     '''
                 }
             }
@@ -48,14 +50,24 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 20, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    script {
+                        // Polling the SonarQube API directly to avoid waitForQualityGate timeout issues
+                        def status = sh(
+                            script: "curl -s -u $SONAR_TOKEN: http://172.28.93.133:9000/api/qualitygates/project_status?projectKey=ci-cd-demo | jq -r '.projectStatus.status'",
+                            returnStdout: true
+                        ).trim()
+                        echo "Quality Gate status: ${status}"
+                        if (status != 'OK') {
+                            error "❌ Quality Gate failed: ${status}"
+                        }
+                    }
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh "docker build -t $IMAGE_NAME:$BUILD_TAG ."
             }
         }
 
@@ -64,7 +76,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push $IMAGE_NAME
+                        docker push $IMAGE_NAME:$BUILD_TAG
                     '''
                 }
             }
