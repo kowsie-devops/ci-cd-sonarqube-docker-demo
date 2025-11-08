@@ -5,7 +5,7 @@ pipeline {
     environment {
         SONARQUBE = 'SonarQube'
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
-        SONAR_TOKEN = credentials('SONAR_TOKEN')
+        SONAR_TOKEN = credentials('SONAR_TOKEN') # Jenkins config name in system config
         BUILD_TAG = "${env.BUILD_NUMBER}"
     }
 
