@@ -41,7 +41,7 @@ pipeline {
                              -Dsonar.projectKey=ci-cd-demo \
                              -Dsonar.sources=. \
                              -Dsonar.host.url=http://172.28.93.133:9000 \
-                             -Dsonar.login=squ_9d615a186046942605af2e58aca9561a95b360a3 \
+                             -Dsonar.login=squ_03e798876fdf449249b3bf991c8d7f4a3d611b48 \
                              -Dsonar.python.version=3.12
                          """
                      }
