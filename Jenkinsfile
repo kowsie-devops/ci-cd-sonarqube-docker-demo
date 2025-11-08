@@ -1,15 +1,19 @@
 pipeline {
     agent any
 
+    options {
+        shell('/bin/bash')
+    }
+
     environment {
-        SONARQUBE = 'SonarQube' // matches Jenkins config name in system config
+        SONARQUBE = 'SonarQube'
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
         SONAR_TOKEN = credentials('SONAR_TOKEN')
         BUILD_TAG = "${env.BUILD_NUMBER}"
     }
 
     triggers {
-        githubPush()  // Trigger pipeline automatically on every GitHub push
+        githubPush()
     }
 
     stages {
@@ -23,7 +27,7 @@ pipeline {
             steps {
                 sh '''
                     python3 -m venv venv
-                    . venv/bin/activate
+                    source venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                     pytest --maxfail=1 --disable-warnings -q
@@ -40,7 +44,7 @@ pipeline {
                             -Dsonar.projectKey=ci-cd-demo \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://172.28.93.133:9000 \
-                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.token=$SONAR_TOKEN \
                             -Dsonar.python.version=3.12
                     '''
                 }
@@ -51,7 +55,6 @@ pipeline {
             steps {
                 timeout(time: 20, unit: 'MINUTES') {
                     script {
-                        // Polling the SonarQube API directly to avoid waitForQualityGate timeout issues
                         def status = sh(
                             script: "curl -s -u $SONAR_TOKEN: http://172.28.93.133:9000/api/qualitygates/project_status?projectKey=ci-cd-demo | jq -r '.projectStatus.status'",
                             returnStdout: true
@@ -67,7 +70,10 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t $IMAGE_NAME:$BUILD_TAG ."
+                sh '''
+                    docker build -t $IMAGE_NAME:$BUILD_TAG .
+                    docker tag $IMAGE_NAME:$BUILD_TAG $IMAGE_NAME:latest
+                '''
             }
         }
 
@@ -77,6 +83,7 @@ pipeline {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push $IMAGE_NAME:$BUILD_TAG
+                        docker push $IMAGE_NAME:latest
                     '''
                 }
             }
@@ -98,4 +105,5 @@ pipeline {
         }
     }
 }
+
 
