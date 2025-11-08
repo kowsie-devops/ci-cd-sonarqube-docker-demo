@@ -2,12 +2,13 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE = 'SonarQube' // Matches name in Jenkins config
-        IMAGE_NAME = 'kowsie-devops/ci-cd-demo' // Your DockerHub repo
+        SONARQUBE = 'SonarQube' // matches Jenkins config name
+        IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
+        SONAR_TOKEN = credentials('SonarQube-Token')
     }
 
     triggers {
-        githubPush() // Auto trigger on commit
+        githubPush()  // ✅ Trigger pipeline automatically on every GitHub push
     }
 
     stages {
@@ -19,7 +20,6 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                // ✅ Use python3 & pip3 explicitly (Jenkins runs in its own environment)
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
@@ -29,25 +29,21 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                     script {
-                // use Jenkins tool instead of relying on PATH
-                         def scannerHome = tool 'SonarScanner'
-                         sh """
-                             ${scannerHome}/bin/sonar-scanner \
-                             -Dsonar.projectKey=ci-cd-demo \
-                             -Dsonar.sources=. \
-                             -Dsonar.host.url=http://172.28.93.133:9000 \
-                             -Dsonar.login=squ_03e798876fdf449249b3bf991c8d7f4a3d611b48 \
-                             -Dsonar.python.version=3.12
-                         """
-                     }
+                    sh '''
+                        /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarScanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=ci-cd-demo \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://172.28.93.133:9000 \
+                        -Dsonar.token=$SonarQube-Token \
+                        -Dsonar.python.version=3.12
+                    '''
                 }
-           }
-       }
+            }
+        }
 
         stage('Quality Gate') {
             steps {
@@ -59,36 +55,34 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Docker Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh """
-                        echo $PASS | docker login -u $USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
-                        docker push ${IMAGE_NAME}:latest
-                    """
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE_NAME
+                    '''
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh """
-                    docker rm -f ci_cd_demo || true
-                    docker run -d --name ci_cd_demo -p 8080:8080 ${IMAGE_NAME}:latest
-                """
+                echo '🚀 Deployment would happen here...'
             }
         }
     }
 
     post {
-        always {
-            echo '✅ Pipeline completed successfully.'
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
         }
     }
 }
