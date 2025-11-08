@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE = 'SonarQube' // matches Jenkins config name
+        SONARQUBE = 'SonarQube' // matches Jenkins config name in system config
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
         SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
