@@ -27,6 +27,7 @@ pipeline {
                     . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
+                    pip install pytest pytest-cov
                     pytest --maxfail=1 --disable-warnings -q
                 '''
             }
@@ -43,6 +44,8 @@ pipeline {
                             -Dsonar.host.url=http://172.28.93.133:9000 \
                             -Dsonar.token=$SONAR_TOKEN \
                             -Dsonar.python.version=3.12
+                            -Dsonar.python.coverage.reportPaths=coverage.xml \
+                            -Dsonar.exclusions=venv/**,**/__pycache__/**,**/*.pyc
                     '''
                 }
             }
@@ -65,9 +68,21 @@ pipeline {
             }
         }
 
+         stage('Docker Check') {
+            steps {
+                sh '''
+                    echo "🔍 Checking Docker access..."
+                    docker info | grep -i "Server Version"
+                    docker ps
+                '''
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh '''
+                    echo "🧱 Building Docker image (BuildKit disabled)..."
+                    export DOCKER_BUILDKIT=0
                     docker build -t $IMAGE_NAME:$BUILD_TAG .
                     docker tag $IMAGE_NAME:$BUILD_TAG $IMAGE_NAME:latest
                 '''
