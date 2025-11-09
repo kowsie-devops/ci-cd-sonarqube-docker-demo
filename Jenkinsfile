@@ -52,22 +52,45 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            steps {
-                timeout(time: 20, unit: 'MINUTES') {
-                  waitForQualityGate abortPipeline: true
-                    script {
-                        def status = sh(
-                            script: "curl -s -u $SONAR_TOKEN: http://172.28.93.133:9000/api/qualitygates/project_status?projectKey=ci-cd-demo | jq -r '.projectStatus.status'",
-                            returnStdout: true
-                        ).trim()
-                        echo "Quality Gate status: ${status}"
-                        if (status != 'OK') {
-                            error "❌ Quality Gate failed: ${status}"
-                        }
-                    }
-                }
-            }
-        }
+           steps {
+               script {
+                   echo "🔍 Checking SonarQube Quality Gate..."
+
+                   try {
+                      timeout(time: 10, unit: 'MINUTES') {
+                    // Try webhook-based check first
+                         def qualityGate = waitForQualityGate abortPipeline: true
+                         echo "✅ Quality Gate passed via webhook: ${qualityGate.status}"
+                      }
+                 } catch (err) {
+                     echo "⚠️ Webhook check failed or timed out. Falling back to manual API check..."
+
+                     def status = ""
+                     for (int i = 0; i < 30; i++) { // Wait up to 5 minutes
+                           status = sh(
+                                script: "curl -s -u $SONAR_TOKEN: http://172.28.93.133:9000/api/qualitygates/project_status?projectKey=ci-cd-demo | jq -r '.projectStatus.status'",
+                                returnStdout: true
+                           ).trim()
+
+                          if (status && status != "NONE") {
+                               echo "SonarQube Quality Gate status: ${status}"
+                               break
+                          }
+
+                          echo "Still waiting for analysis... (${i+1}/30)"
+                          sleep(10)
+                   }
+
+                   if (status != 'OK') {
+                         error "❌ Quality Gate failed: ${status}"
+                   } else {
+                         echo "✅ Quality Gate passed via manual fallback!"
+                   }
+               }
+           }
+       }
+   }
+
 
          stage('Docker Check') {
             steps {
