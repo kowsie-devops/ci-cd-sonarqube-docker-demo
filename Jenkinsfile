@@ -43,7 +43,7 @@ pipeline {
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://172.28.93.133:9000 \
                             -Dsonar.token=$SONAR_TOKEN \
-                            -Dsonar.python.version=3.12
+                            -Dsonar.python.version=3.12 \
                             -Dsonar.python.coverage.reportPaths=coverage.xml \
                             -Dsonar.exclusions=venv/**,**/__pycache__/**,**/*.pyc
                     '''
