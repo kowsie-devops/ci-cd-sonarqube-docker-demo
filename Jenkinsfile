@@ -5,7 +5,7 @@ pipeline {
     environment {
         SONARQUBE = 'SonarQube'
         IMAGE_NAME = 'kowsie-devops/ci-cd-demo'
-        SONAR_TOKEN = credentials('SONAR_TOKEN')
+        SONAR_TOKEN = credentials('SONAR_TOKEN') // Jenkins system config name
         BUILD_TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -54,6 +54,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 20, unit: 'MINUTES') {
+                  waitForQualityGate abortPipeline: true
                     script {
                         def status = sh(
                             script: "curl -s -u $SONAR_TOKEN: http://172.28.93.133:9000/api/qualitygates/project_status?projectKey=ci-cd-demo | jq -r '.projectStatus.status'",
